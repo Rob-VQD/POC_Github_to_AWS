@@ -158,15 +158,15 @@ resource "aws_security_group" "Bastion-SG" {
 # 12. Create Security Group to allo traffic from other Security Group
 resource "aws_security_group" "RDS-SG" {
   name        = "RDS-SG_traffic"
-  description = "Allow Web inbound traffic"
+  description = "Allow inbound MySQL/Aurora traffic from Bastion-SG"
   vpc_id      = aws_vpc.rds-vpc.id
 
   ingress {
-      description = "All traffic from public SG"
-      from_port = 0
-      to_port = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      description = "MySQL/Aurora traffic from public SG"
+      from_port = 3306
+      to_port = 3306
+      protocol    = "tcp"
+      security_groups = [aws_security_group.Bastion-SG.id]
   }
 
   egress {
