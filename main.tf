@@ -9,7 +9,9 @@ resource "aws_vpc" "rds-vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
     Name = "RDS-VPC"
-    Purpose = "POC AWS on DevOps"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
@@ -23,10 +25,13 @@ resource "aws_route_table" "private-route-table" {
   vpc_id = aws_vpc.rds-vpc.id
   tags = {
     Name = "Private-RT"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
-# 3. Create Public Route Table
+# 4. Create Public Route Table
 resource "aws_route_table" "public-route-table" {
   vpc_id = aws_vpc.rds-vpc.id
 
@@ -42,10 +47,13 @@ resource "aws_route_table" "public-route-table" {
 
   tags = {
     Name = "Public-RT"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
-# 4. Create first Subnet 
+# 5. Create first private Subnet 
 resource "aws_subnet" "private_subnet_1" {
   vpc_id            = aws_vpc.rds-vpc.id
   cidr_block        = "10.0.1.0/24"
@@ -53,10 +61,13 @@ resource "aws_subnet" "private_subnet_1" {
 
   tags = {
     Name = "Private-subnet-1"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
-# 4. Create Second subnet in different AZ  
+# 6. Create second private Subnet in different AZ  
 resource "aws_subnet" "private_subnet_2" {
   vpc_id            = aws_vpc.rds-vpc.id
   cidr_block        = "10.0.2.0/24"
@@ -64,11 +75,13 @@ resource "aws_subnet" "private_subnet_2" {
 
   tags = {
     Name = "Private-subnet-2"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
-# 5. Create second subnet in different AZ for Availability
-
+# 7. Create public Subnet
 resource "aws_subnet" "public_subnet" {
   vpc_id            = aws_vpc.rds-vpc.id
   cidr_block        = "10.0.3.0/24"
@@ -76,39 +89,44 @@ resource "aws_subnet" "public_subnet" {
 
   tags = {
     Name = "Public-subnet-1"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
-# 6. Create subnet group
-
+# 8. Create subnet group for RDS
 resource "aws_db_subnet_group" "RDS-subnet-group" {
   name       = "main"
   subnet_ids = [aws_subnet.private_subnet_1.id,aws_subnet.private_subnet_2.id]
 
   tags = {
     Name = "My DB subnet group"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
-# 7. Associate subnet with Route Table
+# 9.1 Associate private subnet with private Route Table
 resource "aws_route_table_association" "a1" {
   subnet_id      = aws_subnet.private_subnet_1.id
   route_table_id = aws_route_table.private-route-table.id
 }
 
-# 7. Associate subnet with Route Table
+# 9.2 Associate private subnet with private Route Table
 resource "aws_route_table_association" "a2" {
   subnet_id      = aws_subnet.private_subnet_2.id
   route_table_id = aws_route_table.private-route-table.id
 }
 
-# 7. Associate subnet with Route Table
+# 10. Associate subnet with Route Table
 resource "aws_route_table_association" "b" {
   subnet_id      = aws_subnet.public_subnet.id
   route_table_id = aws_route_table.public-route-table.id
 }
 
-# 8. Create Security Group to allow traffic into Bastion host
+# 11. Create Security Group to allow traffic into Bastion host
 resource "aws_security_group" "Bastion-SG" {
   name        = "Bastion-SG_traffic"
   description = "Allow one IP inbound traffic"
@@ -131,9 +149,13 @@ resource "aws_security_group" "Bastion-SG" {
 
   tags = {
     Name = "Bastion-SG"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
+# 12. Create Security Group to allo traffic from other Security Group
 resource "aws_security_group" "RDS-SG" {
   name        = "RDS-SG_traffic"
   description = "Allow Web inbound traffic"
@@ -156,12 +178,13 @@ resource "aws_security_group" "RDS-SG" {
 
   tags = {
     Name = "RDS-SG"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
 
-
-
-# 9. Create a network interface with an ip in the subnet that was created in step 4
+# 13. Create a network interface with an ip in the subnet that was created in step 4
 resource "aws_network_interface" "web-server-nic" {
   subnet_id       = aws_subnet.public_subnet.id
   private_ips     = ["10.0.3.50"]
@@ -169,7 +192,7 @@ resource "aws_network_interface" "web-server-nic" {
 
 }
 
-# 10. Assign an elastic IP to the network interface created in step 7
+# 14. Assign an elastic IP to the network interface created in step 7
 resource "aws_eip" "one" {
   vpc                       = true
   network_interface         = aws_network_interface.web-server-nic.id
@@ -178,7 +201,7 @@ resource "aws_eip" "one" {
 }
 
 
-# 9. Create RDS instance within VPC
+# 15. Create RDS instance within VPC
 resource "aws_db_instance" "First_RDS" {
   allocated_storage    = 5
   engine               = "mysql"
@@ -193,16 +216,23 @@ resource "aws_db_instance" "First_RDS" {
   db_subnet_group_name = aws_db_subnet_group.RDS-subnet-group.id
   vpc_security_group_ids = [aws_security_group.RDS-SG.id]
   skip_final_snapshot  = true
+
+  tags = {
+    Name = "TF-RDS"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
+  }
 }
 
-# 9. Create Linux server and install/enable apache2
+# 16. Create instance for Bastion Host
 resource "aws_instance" "Bastion-Host" {
   ami               = "ami-085925f297f89fce1"
   instance_type     = "t2.micro"
   availability_zone = "us-east-1b"
 
-  # This key has to be made in the AWS console under EC2! 
-  key_name          = "Terraform-Key"
+  # !!!!! This key has to be MANUALLY made in the AWS console under EC2 !!!!
+  key_name          = "Terraform_key_Rob"
 
   network_interface {
     device_index         = 0
@@ -210,88 +240,8 @@ resource "aws_instance" "Bastion-Host" {
   }
   tags = {
     Name = "Bastion_host"
+    Owner = "Rob"
+    Env   = "Sandbox"
+    Purpose = "Research"
   }
 }
-
-
-
-# module "db" {
-#   source = "../../"
-
-#   identifier = "demodb"
-
-#   # All available versions: http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html#MySQL.Concepts.VersionMgmt
-#   engine            = "mysql"
-#   engine_version    = "5.7.19"
-#   instance_class    = "db.t2.large"
-#   allocated_storage = 5
-#   storage_encrypted = false
-
-#   # kms_key_id        = "arm:aws:kms:<region>:<account id>:key/<kms key id>"
-#   name     = "demodb"
-#   username = var.Database_Username
-#   password = var.Database_Password
-#   port     = var.Port_to_connect_to_db
-
-#   vpc_security_group_ids = [aws_security_group.RDS-SG.id]
-
-#   maintenance_window = "Mon:00:00-Mon:03:00"
-#   backup_window      = "03:00-06:00"
-
-#   multi_az = true
-
-#   # disable backups to create DB faster
-#   backup_retention_period = 0
-
-#   tags = {
-#     Owner       = "user"
-#     Environment = "dev"
-#   }
-
-#   enabled_cloudwatch_logs_exports = ["audit", "general"]
-
-#   # DB subnet group
-#   subnet_ids = data.aws_subnet_ids.all.ids
-
-#   # DB parameter group
-#   family = "mysql5.7"
-
-#   # DB option group
-#   major_engine_version = "5.7"
-
-#   # Snapshot name upon DB deletion
-#   final_snapshot_identifier = "demodb"
-
-#   # Database Deletion Protection
-#   deletion_protection = false
-
-#   parameters = [
-#     {
-#       name  = "character_set_client"
-#       value = "utf8"
-#     },
-#     {
-#       name  = "character_set_server"
-#       value = "utf8"
-#     }
-#   ]
-
-#   options = [
-#     {
-#       option_name = "MARIADB_AUDIT_PLUGIN"
-
-#       option_settings = [
-#         {
-#           name  = "SERVER_AUDIT_EVENTS"
-#           value = "CONNECT"
-#         },
-#         {
-#           name  = "SERVER_AUDIT_FILE_ROTATIONS"
-#           value = "37"
-#         },
-#       ]
-#     },
-#   ]
-# }
-
-
