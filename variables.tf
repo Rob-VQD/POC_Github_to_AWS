@@ -4,7 +4,7 @@ variable "shared_credentials_path" {
 }
 
 variable "IP_address_port_1433" {
-    type = list
+    type = list(string)
     description = "Give IP addresses to allow traffic to RDS, every IP in string form and total in list form (default is ONLY VQD IP address)"
 }
 
